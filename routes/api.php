@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PartRequestController;
 use App\Http\Controllers\Api\SparePartController;
@@ -72,7 +73,17 @@ Route::prefix('v1')->group(function () {
         Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
         Route::post('notifications/{id}/read', [NotificationController::class, 'read']);
 
-        // Future modules (inventory, purchase requests) are added here as they are built.
+        // ---- Inventory (read-only field visibility) ----
+        Route::middleware('can:view-inventory')->group(function () {
+            Route::get('inventory', [InventoryController::class, 'index']);
+            Route::get('inventory/summary', [InventoryController::class, 'summary']);
+            Route::get('inventory/low-stock', [InventoryController::class, 'lowStock']);
+            Route::get('inventory/categories', [InventoryController::class, 'categories']);
+            Route::get('inventory/{sparePart}', [InventoryController::class, 'show']);
+            Route::get('inventory/{sparePart}/movements', [InventoryController::class, 'movements']);
+        });
+
+        // Future modules (purchase requests) are added here as they are built.
     });
 });
 

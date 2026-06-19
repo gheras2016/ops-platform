@@ -36,6 +36,13 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('view-reports', fn (User $user) => $user->isAdmin() || $user->isDepartmentHead());
         // Inventory / spare-parts catalogue + procurement (admins or the warehouse manager).
         Gate::define('inventory-access', fn (User $user) => $user->canManageInventory());
+        // Read-only stock visibility for field staff (techs, heads) + warehouse/finance/admin.
+        // Anyone working on tickets may check availability; plain requesters may not.
+        Gate::define('view-inventory', fn (User $user) => $user->isAdmin()
+            || $user->isWarehouseManager()
+            || $user->isDepartmentHead()
+            || $user->isTechnician()
+            || $user->isFinanceManager());
         // Finance approval of purchases (admins or the finance manager).
         Gate::define('finance-access', fn (User $user) => $user->canApprovePurchasing());
     }

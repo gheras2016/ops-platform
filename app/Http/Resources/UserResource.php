@@ -43,7 +43,7 @@ class UserResource extends JsonResource
     {
         $user = $this->resource;
 
-        return collect(['platform-access', 'admin-access', 'view-reports', 'inventory-access', 'finance-access'])
+        return collect(['platform-access', 'admin-access', 'view-reports', 'inventory-access', 'view-inventory', 'finance-access'])
             ->filter(fn ($gate) => Gate::forUser($user)->allows($gate))
             ->values()
             ->all();

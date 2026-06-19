@@ -53,6 +53,9 @@ class TicketDetailResource extends JsonResource
                 'id' => $this->department->id,
                 'name' => $this->department->name,
             ] : null,
+            // The ticket's "category" for contextual help is its department type.
+            'category' => $this->department?->type,
+            'category_label' => $this->department?->typeLabel(),
             'creator' => $this->ref($this->creator),
             'technician' => $this->ref($this->technician),
             'assigner' => $this->ref($this->assigner),
