@@ -10,9 +10,13 @@ class TrustProxies extends Middleware
     /**
      * The trusted proxies for this application.
      *
+     * '*' trusts the platform load balancer (Railway/Heroku/etc.) so Laravel
+     * honours X-Forwarded-Proto and emits correct https asset/URL links behind
+     * the TLS-terminating proxy — fixes mixed-content (no CSS/JS) on Railway.
+     *
      * @var array<int, string>|string|null
      */
-    protected $proxies;
+    protected $proxies = '*';
 
     /**
      * The headers that should be used to detect proxies.
