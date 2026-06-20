@@ -73,35 +73,10 @@
                     <i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول
                 </button>
             </form>
-
-            <div class="auth-divider">حسابات تجريبية</div>
-
-            <div class="demo-creds">
-                <div class="flex items-center gap-2 text-muted"><i class="fa-solid fa-flask"></i> كلمة المرور للجميع: <code>password</code></div>
-                <div class="dc-grid">
-                    <div><span>مدير النظام</span> <code>admin@rawad.test</code></div>
-                    <div><span>مدير التشغيل</span> <code>ops.head@rawad.test</code></div>
-                    <div><span>رئيس قسم</span> <code>it.head@rawad.test</code></div>
-                    <div><span>المالية</span> <code>finance@rawad.test</code></div>
-                    <div><span>المخزون</span> <code>warehouse@rawad.test</code></div>
-                    <div><span>فني</span> <code>it.tech1@rawad.test</code></div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
 
 @include('partials.password-toggle')
-<script>
-    // Click a demo code to autofill the login form.
-    document.querySelectorAll('.demo-creds code').forEach(function (c) {
-        if (c.textContent.indexOf('@') === -1) return;
-        c.addEventListener('click', function () {
-            document.querySelector('input[name=email]').value = c.textContent.trim();
-            document.querySelector('input[name=password]').value = 'password';
-            document.querySelector('input[name=email]').focus();
-        });
-    });
-</script>
 </body>
 </html>
