@@ -87,6 +87,7 @@
 
         <main class="app-content">
             @include('partials.flash')
+            @include('partials.subscription-banner')
             @yield('content')
         </main>
     </div>

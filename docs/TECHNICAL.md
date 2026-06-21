@@ -202,8 +202,33 @@ and the `active` middleware. List endpoints return Laravel pagination
 
 ## 7. Testing
 
-`php artisan test` — 78 feature tests (auth, tickets, lifecycle, notifications, in-ticket
-spare parts, part-request workflow, inventory, multi-tenant, procurement, import/export,
-route smoke). Mobile: `flutter analyze` (clean) + `flutter test`.
+`php artisan test` — 94 feature tests (auth, tickets, lifecycle, notifications, in-ticket
+spare parts, part-request workflow + approvals, inventory, purchase requests, multi-tenant,
+procurement, import/export, route smoke). Mobile: `flutter analyze` (clean) + `flutter test`.
 
 The test DB is the same MySQL/MariaDB connection (`ops_platform`); the server must be running.
+
+---
+
+## 8. API additions (2026-06)
+
+### Spare-part requests & approvals
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/spare-parts` | catalogue search; **department-scoped** to the user unless `canManageInventory` |
+| GET/POST | `/tickets/{ticket}/part-requests` | list / raise (catalogue `spare_part_id` OR custom `name`); raising pauses the ticket |
+| GET | `/part-requests` | role-aware approvals inbox `{ pending_approvals, to_issue }` |
+| POST | `/part-requests/{id}/approve\|reject\|issue\|cancel` | head approves, warehouse issues |
+
+### Purchase requests (procurement loop)
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/purchase-requests` | role-aware `{ actionable, mine }` |
+| GET | `/purchase-requests/meta` | departments, types (stock\|direct), open tickets |
+| POST | `/purchase-requests` | create + submit into the chain |
+| GET | `/purchase-requests/{id}` | detail + items + approval timeline |
+| POST | `/purchase-requests/{id}/approve\|reject\|receive` | head → finance → received |
+
+Both reuse the web services/policies (`PartRequestWorkflowService`, `ProcurementService`,
+`PartRequestPolicy`, `PurchaseRequestPolicy`). New gate `view-inventory` (read-only field
+visibility). Resources expose server-computed `available_actions` per role + state.

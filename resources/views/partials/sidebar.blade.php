@@ -112,6 +112,10 @@
                 <i class="fa-solid fa-building sidebar-link-icon"></i>
                 <span class="sidebar-link-text">الشركات</span>
             </a>
+            <a href="{{ route('subscriptions.index') }}" class="sidebar-link {{ request()->routeIs('subscriptions.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-credit-card sidebar-link-icon"></i>
+                <span class="sidebar-link-text">الاشتراكات</span>
+            </a>
         @endcan
     </nav>
 

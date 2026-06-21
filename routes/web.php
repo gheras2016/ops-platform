@@ -113,6 +113,16 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('settings/theme', [\App\Http\Controllers\SettingsController::class, 'updateTheme'])->name('settings.theme.update');
     Route::post('settings/theme/reset', [\App\Http\Controllers\SettingsController::class, 'resetTheme'])->name('settings.theme.reset');
 
+    // Company self-service subscription (company admin)
+    Route::get('subscription', [\App\Http\Controllers\CompanySubscriptionController::class, 'show'])->name('company.subscription');
+    Route::post('subscription/request', [\App\Http\Controllers\CompanySubscriptionController::class, 'requestSubscription'])->name('company.subscription.request');
+
+    // Platform subscription management (super-admin)
+    Route::get('subscriptions', [\App\Http\Controllers\SubscriptionAdminController::class, 'index'])->name('subscriptions.index');
+    Route::post('subscriptions/{company}/activate', [\App\Http\Controllers\SubscriptionAdminController::class, 'activate'])->name('subscriptions.activate');
+    Route::post('subscriptions/{company}/extend', [\App\Http\Controllers\SubscriptionAdminController::class, 'extendTrial'])->name('subscriptions.extend');
+    Route::post('subscriptions/{company}/suspend', [\App\Http\Controllers\SubscriptionAdminController::class, 'suspend'])->name('subscriptions.suspend');
+
     Route::post('companies/{company}/toggle', [CompanyController::class, 'toggle'])->name('companies.toggle');
     Route::get('companies/{company}/export', [CompanyController::class, 'export'])->name('companies.export');
     Route::resource('companies', CompanyController::class)->except('show');
