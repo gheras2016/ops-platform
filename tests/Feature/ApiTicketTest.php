@@ -140,6 +140,17 @@ class ApiTicketTest extends TestCase
         $this->assertNotEmpty(collect($res->json('data.comments'))->firstWhere('body', 'متى يُصلح؟'));
     }
 
+    public function test_meta_includes_dynamic_example_per_department(): void
+    {
+        Sanctum::actingAs($this->requester);
+        $res = $this->getJson('/api/v1/tickets/meta')->assertOk();
+
+        $dept = collect($res->json('departments'))->firstWhere('id', $this->dept->id);
+        $this->assertNotNull($dept);
+        $this->assertEquals('maintenance', $dept['type']);
+        $this->assertEquals(config('ticket_examples.maintenance'), $dept['example']);
+    }
+
     public function test_dashboard_stats(): void
     {
         $this->makeTicket($this->requester);

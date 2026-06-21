@@ -71,9 +71,18 @@ class TicketController extends Controller
     /** Reference data for the "new ticket" form. */
     public function meta(Request $request)
     {
+        $default = config('ticket_examples.default');
+
         return response()->json([
             'departments' => Department::where('is_active', true)
-                ->where('accepts_tickets', true)->orderBy('name')->get(['id', 'name']),
+                ->where('accepts_tickets', true)->orderBy('name')->get(['id', 'name', 'type'])
+                ->map(fn ($d) => [
+                    'id' => $d->id,
+                    'name' => $d->name,
+                    'type' => $d->type,
+                    // Dynamic example hint for the new-ticket form, by department type.
+                    'example' => config('ticket_examples.' . $d->type, $default),
+                ]),
             'priorities' => Priority::orderBy('level')->get(['id', 'name', 'level', 'color']),
             'locations' => Location::orderBy('full_path')->get(['id', 'name', 'full_path']),
         ]);

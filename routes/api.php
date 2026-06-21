@@ -3,7 +3,10 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PartRequestActionController;
 use App\Http\Controllers\Api\PartRequestController;
+use App\Http\Controllers\Api\PurchaseRequestActionController;
+use App\Http\Controllers\Api\PurchaseRequestController;
 use App\Http\Controllers\Api\SparePartController;
 use App\Http\Controllers\Api\TicketActionController;
 use App\Http\Controllers\Api\TicketController;
@@ -47,9 +50,19 @@ Route::prefix('v1')->group(function () {
         Route::post('tickets/{ticket}/spare-parts', [TicketSparePartController::class, 'store']);
         Route::delete('tickets/{ticket}/spare-parts/{sparePart}', [TicketSparePartController::class, 'destroy']);
 
-        // Non-catalogue part requests tied to a ticket
+        // Part requests tied to a ticket (catalogue or non-catalogue)
         Route::get('tickets/{ticket}/part-requests', [PartRequestController::class, 'index']);
         Route::post('tickets/{ticket}/part-requests', [PartRequestController::class, 'store']);
+
+        // Spare-part request approvals (head approves/rejects, warehouse issues)
+        Route::get('part-requests', [PartRequestActionController::class, 'inbox']);
+        Route::controller(PartRequestActionController::class)
+            ->prefix('part-requests/{partRequest}')->group(function () {
+                Route::post('approve', 'approve');
+                Route::post('reject', 'reject');
+                Route::post('issue', 'issue');
+                Route::post('cancel', 'cancel');
+            });
 
         // Lifecycle transitions
         Route::controller(TicketActionController::class)
@@ -83,7 +96,17 @@ Route::prefix('v1')->group(function () {
             Route::get('inventory/{sparePart}/movements', [InventoryController::class, 'movements']);
         });
 
-        // Future modules (purchase requests) are added here as they are built.
+        // ---- Purchase requests (procurement loop) ----
+        Route::get('purchase-requests', [PurchaseRequestController::class, 'index']);
+        Route::get('purchase-requests/meta', [PurchaseRequestController::class, 'meta']);
+        Route::post('purchase-requests', [PurchaseRequestController::class, 'store']);
+        Route::get('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'show']);
+        Route::controller(PurchaseRequestActionController::class)
+            ->prefix('purchase-requests/{purchaseRequest}')->group(function () {
+                Route::post('approve', 'approve');
+                Route::post('reject', 'reject');
+                Route::post('receive', 'receive');
+            });
     });
 });
 

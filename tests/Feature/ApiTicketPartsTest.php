@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Company;
 use App\Models\Department;
+use App\Models\SpareCategory;
 use App\Models\SparePart;
 use App\Models\Ticket;
 use App\Models\User;
@@ -86,6 +87,43 @@ class ApiTicketPartsTest extends TestCase
         $names = collect($res->json('data'))->pluck('name');
         $this->assertTrue($names->contains('Pump seal'));
         $this->assertFalse($names->contains('Hidden'));
+    }
+
+    /** Make a spare part that belongs to ANOTHER department's category. */
+    protected function otherDepartmentPart(): SparePart
+    {
+        $itDept = Department::create(['company_id' => $this->company->id, 'name' => 'IT', 'type' => 'it']);
+        $itCat = SpareCategory::create(['company_id' => $this->company->id, 'department_id' => $itDept->id, 'name' => 'IT cat']);
+
+        return SparePart::create([
+            'company_id' => $this->company->id,
+            'category_id' => $itCat->id,
+            'name' => 'IT Router',
+            'part_number' => 'PN-IT-' . rand(1000, 9999),
+            'quantity' => 5,
+        ]);
+    }
+
+    public function test_picker_is_scoped_to_technician_department(): void
+    {
+        $this->otherDepartmentPart(); // another department's part
+
+        Sanctum::actingAs($this->tech); // technician in the Maintenance department
+        $names = collect($this->getJson('/api/v1/spare-parts')->assertOk()->json('data'))->pluck('name');
+
+        $this->assertTrue($names->contains('Pump seal'));  // uncategorised → global → visible
+        $this->assertFalse($names->contains('IT Router')); // other department → hidden
+    }
+
+    public function test_warehouse_manager_sees_all_departments_parts(): void
+    {
+        $this->otherDepartmentPart();
+        $warehouse = $this->user(User::ROLE_WAREHOUSE_MANAGER);
+
+        Sanctum::actingAs($warehouse);
+        $names = collect($this->getJson('/api/v1/spare-parts')->assertOk()->json('data'))->pluck('name');
+
+        $this->assertTrue($names->contains('IT Router')); // inventory manager → sees everything
     }
 
     public function test_technician_records_a_used_catalogue_part_without_deducting_stock(): void
@@ -200,8 +238,32 @@ class ApiTicketPartsTest extends TestCase
             'custom_name' => 'صمام خاص', 'description' => 'صمام نحاسي 2 إنش غير متوفر بالكتالوج', 'qty_requested' => 2,
         ]);
 
+        // Raising a part request while working PAUSES the ticket until the parts
+        // are approved + issued (same behaviour as the web).
+        $this->assertEquals(Ticket::STATUS_PAUSED, $ticket->fresh()->status);
+        $this->assertDatabaseHas('ticket_pause_logs', ['ticket_id' => $ticket->id, 'reason_code' => 'spare_part']);
+
         // Linked request is visible on the ticket.
         $list = $this->getJson("/api/v1/tickets/{$ticket->id}/part-requests")->assertOk();
         $this->assertCount(1, $list->json('data'));
+    }
+
+    public function test_technician_requests_a_catalogue_part_from_warehouse(): void
+    {
+        $ticket = $this->workingTicket();
+
+        Sanctum::actingAs($this->tech);
+        $res = $this->postJson("/api/v1/tickets/{$ticket->id}/part-requests", [
+            'spare_part_id' => $this->part->id,
+            'quantity' => 2,
+            'reason' => 'مطلوبة لإكمال الإصلاح',
+        ])->assertCreated();
+
+        $item = $res->json('data.items.0');
+        $this->assertEquals($this->part->id, $item['spare_part_id']);
+        $this->assertFalse($item['is_custom']);
+
+        // Requesting parts pauses the ticket until they are approved + issued.
+        $this->assertEquals(Ticket::STATUS_PAUSED, $ticket->fresh()->status);
     }
 }

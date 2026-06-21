@@ -9,14 +9,20 @@ use Illuminate\Http\Request;
 
 /**
  * Read-only spare-parts catalogue search for the in-ticket picker. Results are
- * company-scoped (BelongsToCompany) and may be narrowed to a department.
+ * company-scoped (BelongsToCompany). Technicians (and other non-inventory roles)
+ * only see parts relevant to THEIR department (its categories + shared/global),
+ * mirroring the web ticket picker; inventory managers/admins see everything.
  */
 class SparePartController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
+        // Null = no department restriction (warehouse manager / admin see all).
+        $department = $user->canManageInventory() ? null : $user->department_id;
+
         $parts = SparePart::with('category')
-            ->when($request->filled('department'), fn ($q) => $q->forDepartment((int) $request->department))
+            ->when($department, fn ($q, $dept) => $q->forDepartment($dept))
             ->when($request->filled('q'), function ($q) use ($request) {
                 $term = $request->q;
                 $q->where(fn ($w) => $w
