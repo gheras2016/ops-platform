@@ -164,7 +164,7 @@ class TicketActionController extends Controller
         $ticket->refresh()->load([
             'department', 'priority', 'location', 'creator', 'technician', 'assigner', 'closer',
             'events.user', 'comments.user',
-            'spareParts.creator', 'partRequests.items.sparePart', 'partRequests.requester',
+            'spareParts.creator', 'partRequests.items.sparePart', 'partRequests.requester', 'attachments.uploader',
         ]);
 
         return new TicketDetailResource($ticket);

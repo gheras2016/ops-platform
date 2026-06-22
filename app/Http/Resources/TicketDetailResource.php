@@ -72,6 +72,7 @@ class TicketDetailResource extends JsonResource
             'comments' => TicketCommentResource::collection($this->whenLoaded('comments')),
             'spare_parts' => TicketSparePartResource::collection($this->whenLoaded('spareParts')),
             'part_requests' => PartRequestResource::collection($this->whenLoaded('partRequests')),
+            'attachments' => TicketAttachmentResource::collection($this->whenLoaded('attachments')),
             'parts_cost' => $this->whenLoaded('spareParts', fn () => $this->partsCost()),
 
             'permissions' => $perms,

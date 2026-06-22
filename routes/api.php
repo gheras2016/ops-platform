@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PurchaseRequestActionController;
 use App\Http\Controllers\Api\PurchaseRequestController;
 use App\Http\Controllers\Api\SparePartController;
 use App\Http\Controllers\Api\TicketActionController;
+use App\Http\Controllers\Api\TicketAttachmentController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\TicketSparePartController;
 use Illuminate\Http\Request;
@@ -49,6 +50,11 @@ Route::prefix('v1')->group(function () {
         Route::get('tickets/{ticket}/spare-parts', [TicketSparePartController::class, 'index']);
         Route::post('tickets/{ticket}/spare-parts', [TicketSparePartController::class, 'store']);
         Route::delete('tickets/{ticket}/spare-parts/{sparePart}', [TicketSparePartController::class, 'destroy']);
+
+        // Ticket attachments (photos / documents)
+        Route::get('tickets/{ticket}/attachments', [TicketAttachmentController::class, 'index']);
+        Route::post('tickets/{ticket}/attachments', [TicketAttachmentController::class, 'store']);
+        Route::delete('tickets/{ticket}/attachments/{attachment}', [TicketAttachmentController::class, 'destroy']);
 
         // Part requests tied to a ticket (catalogue or non-catalogue)
         Route::get('tickets/{ticket}/part-requests', [PartRequestController::class, 'index']);

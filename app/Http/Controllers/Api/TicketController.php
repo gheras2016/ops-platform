@@ -51,7 +51,7 @@ class TicketController extends Controller
         $ticket->load([
             'department', 'priority', 'location', 'creator', 'technician', 'assigner', 'closer',
             'events.user', 'comments.user',
-            'spareParts.creator', 'partRequests.items.sparePart', 'partRequests.requester',
+            'spareParts.creator', 'partRequests.items.sparePart', 'partRequests.requester', 'attachments.uploader',
         ]);
 
         return new TicketDetailResource($ticket);
