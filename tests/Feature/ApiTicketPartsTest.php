@@ -206,6 +206,25 @@ class ApiTicketPartsTest extends TestCase
         $this->deleteJson("/api/v1/tickets/{$ticket->id}/spare-parts/{$usageId}")->assertStatus(422);
     }
 
+    public function test_requesting_parts_pauses_an_accepted_ticket_too(): void
+    {
+        // Accepted but not yet "started" — requesting parts should still pause it.
+        $ticket = $this->workflow->create(
+            ['company_id' => $this->company->id, 'title' => 'A', 'department_id' => $this->dept->id],
+            $this->requester,
+        );
+        $this->workflow->assign($ticket->fresh(), $this->tech, $this->head);
+        $this->workflow->accept($ticket->fresh(), $this->tech);
+        $this->assertEquals(Ticket::STATUS_ACCEPTED, $ticket->fresh()->status);
+
+        Sanctum::actingAs($this->tech);
+        $this->postJson("/api/v1/tickets/{$ticket->id}/part-requests", [
+            'spare_part_id' => $this->part->id, 'quantity' => 1,
+        ])->assertCreated();
+
+        $this->assertEquals(Ticket::STATUS_PAUSED, $ticket->fresh()->status);
+    }
+
     public function test_requester_cannot_record_parts(): void
     {
         $ticket = $this->workingTicket();

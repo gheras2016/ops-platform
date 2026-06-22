@@ -61,7 +61,7 @@ class PartRequestWorkflowService
             }
 
             // Reuse the ticket pause workflow: a request means the tech is waiting on parts.
-            if ($ticket->status === Ticket::STATUS_IN_PROGRESS) {
+            if ($ticket->canBePaused()) {
                 app(TicketWorkflowService::class)->pause(
                     $ticket, $technician, 'spare_part',
                     'تم إنشاء طلب صرف إسبير رقم ' . $request->request_number

@@ -231,7 +231,9 @@ class Ticket extends Model
 
     public function canBePaused(): bool
     {
-        return $this->status === self::STATUS_IN_PROGRESS;
+        // A ticket can be paused once the technician has it in hand (accepted) or
+        // is actively working on it — e.g. when blocked waiting on a spare part.
+        return in_array($this->status, [self::STATUS_ACCEPTED, self::STATUS_IN_PROGRESS], true);
     }
 
     public function canBeResolved(): bool
