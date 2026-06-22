@@ -2,6 +2,7 @@
 builder = "NIXPACKS"
 
 [deploy]
-# Run pending migrations on every deploy (idempotent) before serving, so schema
-# changes (e.g. the subscriptions tables) are applied automatically on Railway.
-startCommand = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+# On each deploy: run migrations (idempotent), start the Laravel scheduler in the
+# background (so subscriptions:tick runs daily — reminders + auto-suspend), then
+# serve in the foreground. The `(… &)` backgrounds the scheduler without blocking.
+startCommand = "php artisan migrate --force && (php artisan schedule:work &) && php artisan serve --host=0.0.0.0 --port=$PORT"

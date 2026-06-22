@@ -14,6 +14,7 @@ class PaymentManager
         return match ($name) {
             'test' => new TestGateway(),
             'moyasar' => new MoyasarGateway(),
+            'stripe' => new StripeGateway(),
             default => throw new InvalidArgumentException("Unsupported payment gateway [{$name}]."),
         };
     }
