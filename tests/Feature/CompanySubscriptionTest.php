@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Company;
 use App\Models\Plan;
+use App\Models\SubscriptionPayment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -46,19 +47,36 @@ class CompanySubscriptionTest extends TestCase
             ->assertOk()->assertSee('اختر باقة');
     }
 
-    public function test_subscription_request_notifies_platform_admins(): void
+    public function test_online_checkout_then_callback_activates_subscription(): void
     {
-        $super = User::create([
-            'company_id' => null, 'name' => 'Super', 'email' => uniqid() . '@ops.test',
-            'password' => bcrypt('secret123'), 'is_active' => true,
-        ]);
-        $super->assignRole(User::ROLE_SUPER_ADMIN);
-
+        // Sandbox gateway (PAYMENT_GATEWAY=test) — checkout creates a pending payment
+        // and redirects; the callback (result=paid) confirms + activates.
         $this->actingAs($this->admin)
-            ->post(route('company.subscription.request'), ['plan_id' => $this->plan->id])
+            ->post(route('company.subscription.checkout'), ['plan_id' => $this->plan->id])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('notifications', ['notifiable_id' => $super->id]);
+        $payment = SubscriptionPayment::where('company_id', $this->company->id)->latest()->firstOrFail();
+        $this->assertEquals('pending', $payment->status);
+
+        $this->actingAs($this->admin)
+            ->get(route('company.subscription.callback', $payment) . '?result=paid')
+            ->assertRedirect(route('company.subscription'));
+
+        $this->assertEquals('paid', $payment->refresh()->status);
+        $this->assertEquals(Company::SUB_ACTIVE, $this->company->refresh()->subscription_status);
+        $this->assertEqualsWithDelta(365, $this->company->daysRemaining(), 1);
+    }
+
+    public function test_callback_rejects_another_companys_payment(): void
+    {
+        $other = Company::create(['name' => 'Other', 'code' => 'OT' . rand(1000, 9999)]);
+        $payment = $other->payments()->create([
+            'plan_id' => $this->plan->id, 'amount' => 1999, 'status' => 'pending', 'method' => 'online', 'gateway' => 'test',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('company.subscription.callback', $payment) . '?result=paid')
+            ->assertForbidden();
     }
 
     public function test_non_admin_cannot_access(): void

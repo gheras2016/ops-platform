@@ -3,20 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Plan;
-use App\Models\User;
-use App\Notifications\SubscriptionNotification;
+use App\Models\SubscriptionPayment;
+use App\Services\Payments\PaymentManager;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 
 /**
- * Company-admin self-service subscription page: see the current plan/expiry,
- * choose a plan, and request to subscribe. Activation happens either via the
- * online gateway (next phase, when keys are configured) or by the platform
- * super-admin confirming the payment.
+ * Company-admin self-service subscription: view plan/expiry/invoices, and pay
+ * online (checkout → gateway hosted page → callback verifies → activate).
  */
 class CompanySubscriptionController extends Controller
 {
-    public function __construct()
+    public function __construct(protected SubscriptionService $subscriptions)
     {
         $this->middleware('can:admin-access');
     }
@@ -33,26 +32,42 @@ class CompanySubscriptionController extends Controller
         ]);
     }
 
-    /**
-     * Request a subscription/renewal for a plan. With the online gateway this
-     * will redirect to checkout; for now it notifies the platform admins to
-     * confirm the payment (they activate from the subscriptions dashboard).
-     */
-    public function requestSubscription(Request $request)
+    /** Start an online checkout for a plan; redirects to the gateway. */
+    public function checkout(Request $request, PaymentManager $payments)
     {
         $data = $request->validate(['plan_id' => ['required', 'exists:plans,id']]);
         $company = $request->user()->company;
         abort_unless($company, 404);
 
         $plan = Plan::findOrFail($data['plan_id']);
+        $gateway = $payments->driver();
+        $payment = $this->subscriptions->createPendingPayment($company, $plan, $gateway->name());
 
-        $admins = User::role(User::ROLE_SUPER_ADMIN)->get();
-        Notification::send($admins, new SubscriptionNotification(
-            $company,
-            'request',
-            "طلبت «{$company->name}» الاشتراك بباقة {$plan->name} ({$plan->price} {$plan->currency}).",
-        ));
+        try {
+            $url = $gateway->checkout($payment, route('company.subscription.callback', $payment));
+        } catch (ValidationException $e) {
+            $payment->update(['status' => SubscriptionPayment::STATUS_FAILED]);
+            throw $e;
+        }
 
-        return back()->with('success', 'تم إرسال طلب الاشتراك. سيُفعّل بعد تأكيد الدفع. (الدفع الإلكتروني المباشر قيد التفعيل.)');
+        return redirect()->away($url);
+    }
+
+    /** Gateway return URL: confirm payment (server-side) and activate. */
+    public function callback(Request $request, PaymentManager $payments, SubscriptionPayment $payment)
+    {
+        abort_unless($payment->company_id === $request->user()->company_id, 403);
+
+        $gateway = $payments->driver($payment->gateway);
+
+        if ($gateway->verify($request, $payment)) {
+            $this->subscriptions->confirmPayment($payment);
+
+            return redirect()->route('company.subscription')->with('success', 'تم الدفع وتفعيل اشتراكك بنجاح.');
+        }
+
+        $payment->update(['status' => SubscriptionPayment::STATUS_FAILED]);
+
+        return redirect()->route('company.subscription')->withErrors(['payment' => 'لم تكتمل عملية الدفع.']);
     }
 }

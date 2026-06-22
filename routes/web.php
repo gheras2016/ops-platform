@@ -115,7 +115,8 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     // Company self-service subscription (company admin)
     Route::get('subscription', [\App\Http\Controllers\CompanySubscriptionController::class, 'show'])->name('company.subscription');
-    Route::post('subscription/request', [\App\Http\Controllers\CompanySubscriptionController::class, 'requestSubscription'])->name('company.subscription.request');
+    Route::post('subscription/checkout', [\App\Http\Controllers\CompanySubscriptionController::class, 'checkout'])->name('company.subscription.checkout');
+    Route::get('subscription/callback/{payment}', [\App\Http\Controllers\CompanySubscriptionController::class, 'callback'])->name('company.subscription.callback');
 
     // Platform subscription management (super-admin)
     Route::get('subscriptions', [\App\Http\Controllers\SubscriptionAdminController::class, 'index'])->name('subscriptions.index');

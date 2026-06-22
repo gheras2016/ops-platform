@@ -48,10 +48,10 @@
                     <li style="padding:3px 0"><i class="fa-solid fa-check" style="color:#16a34a"></i> {{ $f }}</li>
                 @endforeach
             </ul>
-            <form method="POST" action="{{ route('company.subscription.request') }}">
+            <form method="POST" action="{{ route('company.subscription.checkout') }}">
                 @csrf
                 <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-                <button class="btn btn-primary btn-block"><i class="fa-solid fa-credit-card"></i> اشترك الآن</button>
+                <button class="btn btn-primary btn-block"><i class="fa-solid fa-credit-card"></i> اشترك وادفع</button>
             </form>
         </div>
     @endforeach

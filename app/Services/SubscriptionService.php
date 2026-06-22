@@ -70,6 +70,51 @@ class SubscriptionService
         });
     }
 
+    /** Create a pending (unpaid) payment to drive an online checkout. */
+    public function createPendingPayment(Company $company, Plan $plan, string $gateway): SubscriptionPayment
+    {
+        return $company->payments()->create([
+            'plan_id' => $plan->id,
+            'amount' => $plan->price,
+            'currency' => $plan->currency,
+            'status' => SubscriptionPayment::STATUS_PENDING,
+            'method' => SubscriptionPayment::METHOD_ONLINE,
+            'gateway' => $gateway,
+        ]);
+    }
+
+    /** Mark a pending payment paid and activate/renew the subscription. Idempotent. */
+    public function confirmPayment(SubscriptionPayment $payment): void
+    {
+        if ($payment->isPaid()) {
+            return;
+        }
+
+        DB::transaction(function () use ($payment) {
+            $company = $payment->company;
+            $plan = $payment->plan;
+
+            $base = $company->current_period_end && $company->current_period_end->isFuture()
+                ? $company->current_period_end->copy()
+                : now();
+            $periodEnd = $base->copy()->addDays($plan?->duration_days ?? 30);
+
+            $payment->update([
+                'status' => SubscriptionPayment::STATUS_PAID,
+                'paid_at' => now(),
+                'period_start' => now()->toDateString(),
+                'period_end' => $periodEnd->toDateString(),
+            ]);
+
+            $company->update([
+                'subscription_status' => Company::SUB_ACTIVE,
+                'plan_id' => $plan?->id,
+                'current_period_end' => $periodEnd,
+                'is_active' => true,
+            ]);
+        });
+    }
+
     /** Extend (or start) a trial by N days from the later of now / current trial end. */
     public function extendTrial(Company $company, int $days): Company
     {
