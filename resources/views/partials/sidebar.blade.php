@@ -79,6 +79,10 @@
                     <i class="fa-solid fa-palette sidebar-link-icon"></i>
                     <span class="sidebar-link-text">الهوية البصرية</span>
                 </a>
+                <a href="{{ route('company.subscription') }}" class="sidebar-link {{ request()->routeIs('company.subscription*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-credit-card sidebar-link-icon"></i>
+                    <span class="sidebar-link-text">الاشتراك</span>
+                </a>
             @endif
         @endcan
 
