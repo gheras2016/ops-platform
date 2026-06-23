@@ -59,6 +59,13 @@ class StripeGateway implements PaymentGateway
         return $res->successful() && $res->json('payment_status') === 'paid';
     }
 
+    public function webhookReference(Request $request): ?string
+    {
+        // Stripe event: { type, data: { object: { id, ... } } } where object.id
+        // is the Checkout Session id we stored as the payment reference.
+        return $request->input('data.object.id');
+    }
+
     public function name(): string
     {
         return 'stripe';

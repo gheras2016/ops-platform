@@ -75,6 +75,5 @@ class SubscriptionAdminTest extends TestCase
             ->post(route('subscriptions.suspend', $this->company))
             ->assertRedirect();
         $this->assertEquals(Company::SUB_SUSPENDED, $this->company->refresh()->subscription_status);
-        $this->assertFalse($this->company->is_active);
     }
 }

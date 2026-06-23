@@ -21,6 +21,12 @@ class Plan extends Model
         'is_active' => 'boolean',
     ];
 
+    // Reflect the DB defaults in freshly-created (in-memory) models.
+    protected $attributes = [
+        'currency' => 'SAR',
+        'is_active' => true,
+    ];
+
     public function companies(): HasMany
     {
         return $this->hasMany(Company::class);

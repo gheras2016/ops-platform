@@ -120,6 +120,10 @@
                 <i class="fa-solid fa-credit-card sidebar-link-icon"></i>
                 <span class="sidebar-link-text">الاشتراكات</span>
             </a>
+            <a href="{{ route('plans.index') }}" class="sidebar-link {{ request()->routeIs('plans.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-layer-group sidebar-link-icon"></i>
+                <span class="sidebar-link-text">الباقات</span>
+            </a>
         @endcan
     </nav>
 

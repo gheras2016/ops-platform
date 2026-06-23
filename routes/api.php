@@ -26,6 +26,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Public payment-gateway webhook (server-to-server; stateless, no CSRF). Secured
+// by server-side verification with the gateway inside the controller.
+Route::post('payments/webhook/{gateway}', [\App\Http\Controllers\PaymentWebhookController::class, 'handle'])
+    ->name('payments.webhook');
+
 Route::prefix('v1')->group(function () {
 
     // Public: obtain a token.

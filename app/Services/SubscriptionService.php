@@ -132,10 +132,14 @@ class SubscriptionService
         return $company;
     }
 
-    /** Super-admin manually suspends / cancels. */
+    /**
+     * Suspend the subscription (lapsed). Keeps `is_active` (the manual platform
+     * ban flag) untouched so the company admin can still log in to the renewal
+     * page and reactivate by paying. EnsureActiveAccount enforces the soft block.
+     */
     public function suspend(Company $company): Company
     {
-        $company->update(['subscription_status' => Company::SUB_SUSPENDED, 'is_active' => false]);
+        $company->update(['subscription_status' => Company::SUB_SUSPENDED]);
 
         return $company;
     }
@@ -168,8 +172,9 @@ class SubscriptionService
             return null;
         }
 
-        // Past grace → hard suspend (blocks login via is_active).
-        $company->update(['subscription_status' => Company::SUB_SUSPENDED, 'is_active' => false]);
+        // Past grace → suspend (soft: admin can still renew; others are blocked
+        // by EnsureActiveAccount via subscription_status).
+        $company->update(['subscription_status' => Company::SUB_SUSPENDED]);
 
         return Company::SUB_SUSPENDED;
     }

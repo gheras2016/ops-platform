@@ -87,10 +87,11 @@ class SubscriptionTest extends TestCase
         $this->assertEquals(Company::SUB_GRACE, $this->svc->processExpiry($c));
         $this->assertTrue($c->refresh()->is_active);
 
-        // Past the grace window → suspended + blocked.
+        // Past the grace window → suspended. is_active (manual ban flag) stays
+        // true so the admin can still log in to renew; the soft block is by status.
         $c->update(['current_period_end' => now()->subDays(5)]);
         $this->assertEquals(Company::SUB_SUSPENDED, $this->svc->processExpiry($c));
-        $this->assertFalse($c->refresh()->is_active);
+        $this->assertTrue($c->refresh()->is_active);
     }
 
     public function test_grandfathered_company_without_deadline_never_expires(): void
@@ -113,6 +114,23 @@ class SubscriptionTest extends TestCase
         ])->assertStatus(422);
     }
 
+    public function test_suspended_admin_is_steered_to_renewal_and_can_reactivate(): void
+    {
+        $c = $this->company();
+        $admin = $this->admin($c);
+        $this->svc->suspend($c);
+
+        // Normal pages bounce the admin to the renewal page, which is reachable.
+        $this->actingAs($admin)->get('/dashboard')->assertRedirect(route('company.subscription'));
+        $this->actingAs($admin)->get(route('company.subscription'))->assertOk();
+
+        // Paying reactivates: status active again + admin regains the app.
+        $payment = $this->svc->createPendingPayment($c, $this->plan, 'test');
+        $this->svc->confirmPayment($payment);
+        $this->assertEquals(Company::SUB_ACTIVE, $c->refresh()->subscription_status);
+        $this->actingAs($admin)->get(route('company.subscription'))->assertOk();
+    }
+
     public function test_tick_reminds_then_suspends_and_notifies_admins(): void
     {
         // (a) reminder at 7 days for a trial.
@@ -129,6 +147,6 @@ class SubscriptionTest extends TestCase
         Artisan::call('subscriptions:tick');
 
         $this->assertEquals(Company::SUB_SUSPENDED, $c->refresh()->subscription_status);
-        $this->assertFalse($c->is_active);
+        $this->assertTrue($c->is_active); // decoupled: status suspended, manual flag untouched
     }
 }

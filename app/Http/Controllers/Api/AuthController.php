@@ -41,6 +41,13 @@ class AuthController extends Controller
             ]);
         }
 
+        // A lapsed subscription blocks the mobile app; the admin renews on the web.
+        if ($user->company && $user->company->subscription_status === \App\Models\Company::SUB_SUSPENDED) {
+            throw ValidationException::withMessages([
+                'email' => ['انتهى اشتراك منشأتك. يرجى التواصل مع مدير الحساب للتجديد.'],
+            ]);
+        }
+
         $device = $data['device_name'] ?? 'mobile';
         $token = $user->createToken($device)->plainTextToken;
 

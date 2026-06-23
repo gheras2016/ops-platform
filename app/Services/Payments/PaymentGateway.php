@@ -24,5 +24,12 @@ interface PaymentGateway
      */
     public function verify(Request $request, SubscriptionPayment $payment): bool;
 
+    /**
+     * Extract the gateway's payment/invoice reference from an async webhook
+     * payload so the matching SubscriptionPayment can be located. Null when the
+     * payload isn't a recognised payment event.
+     */
+    public function webhookReference(Request $request): ?string;
+
     public function name(): string;
 }

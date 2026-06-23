@@ -22,7 +22,12 @@ class TestGateway implements PaymentGateway
 
     public function verify(Request $request, SubscriptionPayment $payment): bool
     {
-        return $request->query('result') === 'paid';
+        return $request->query('result') === 'paid' || $request->input('result') === 'paid';
+    }
+
+    public function webhookReference(Request $request): ?string
+    {
+        return $request->input('reference');
     }
 
     public function name(): string

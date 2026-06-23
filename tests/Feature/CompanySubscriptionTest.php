@@ -84,4 +84,20 @@ class CompanySubscriptionTest extends TestCase
         $tech = $this->user(User::ROLE_TECHNICIAN);
         $this->actingAs($tech)->get(route('company.subscription'))->assertForbidden();
     }
+
+    public function test_webhook_confirms_payment_server_to_server(): void
+    {
+        $svc = app(\App\Services\SubscriptionService::class);
+        $payment = $svc->createPendingPayment($this->company, $this->plan, 'test');
+        $payment->update(['reference' => 'test_' . $payment->id]);
+
+        // No auth/session — the gateway calls this directly.
+        $this->postJson('/api/payments/webhook/test', [
+            'reference' => 'test_' . $payment->id,
+            'result' => 'paid',
+        ])->assertOk();
+
+        $this->assertEquals('paid', $payment->refresh()->status);
+        $this->assertEquals(Company::SUB_ACTIVE, $this->company->refresh()->subscription_status);
+    }
 }

@@ -118,6 +118,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('subscription/checkout', [\App\Http\Controllers\CompanySubscriptionController::class, 'checkout'])->name('company.subscription.checkout');
     Route::get('subscription/callback/{payment}', [\App\Http\Controllers\CompanySubscriptionController::class, 'callback'])->name('company.subscription.callback');
 
+    // Plans management (super-admin)
+    Route::get('plans', [\App\Http\Controllers\PlanController::class, 'index'])->name('plans.index');
+    Route::post('plans', [\App\Http\Controllers\PlanController::class, 'store'])->name('plans.store');
+    Route::put('plans/{plan}', [\App\Http\Controllers\PlanController::class, 'update'])->name('plans.update');
+    Route::post('plans/{plan}/toggle', [\App\Http\Controllers\PlanController::class, 'toggle'])->name('plans.toggle');
+
     // Platform subscription management (super-admin)
     Route::get('subscriptions', [\App\Http\Controllers\SubscriptionAdminController::class, 'index'])->name('subscriptions.index');
     Route::post('subscriptions/{company}/activate', [\App\Http\Controllers\SubscriptionAdminController::class, 'activate'])->name('subscriptions.activate');

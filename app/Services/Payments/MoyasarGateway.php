@@ -55,6 +55,13 @@ class MoyasarGateway implements PaymentGateway
         return $res->successful() && $res->json('status') === 'paid';
     }
 
+    public function webhookReference(Request $request): ?string
+    {
+        // Moyasar invoice webhooks: { type, data: { id, ... } } where data.id is
+        // the invoice id we stored as the payment reference.
+        return $request->input('data.id') ?? $request->input('data.invoice_id') ?? $request->input('id');
+    }
+
     public function name(): string
     {
         return 'moyasar';
