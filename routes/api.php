@@ -36,6 +36,10 @@ Route::prefix('v1')->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
 
+        // FCM device registration
+        Route::post('devices', [\App\Http\Controllers\Api\DeviceController::class, 'store']);
+        Route::delete('devices', [\App\Http\Controllers\Api\DeviceController::class, 'destroy']);
+
         // ---- Tickets module ----
         Route::get('dashboard/stats', [TicketController::class, 'stats']);
         Route::get('tickets/meta', [TicketController::class, 'meta']);
