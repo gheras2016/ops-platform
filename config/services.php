@@ -31,4 +31,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Firebase Cloud Messaging. Put the whole service-account JSON in
+    // FIREBASE_CREDENTIALS (or a file path in FIREBASE_CREDENTIALS_PATH).
+    'fcm' => [
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+        'credentials_path' => env('FIREBASE_CREDENTIALS_PATH'),
+    ],
+
 ];

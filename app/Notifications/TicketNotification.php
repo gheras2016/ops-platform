@@ -47,7 +47,20 @@ class TicketNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'fcm'];
+    }
+
+    /** Push payload for the FCM channel (background/closed-app delivery). */
+    public function toFcm(object $notifiable): array
+    {
+        return [
+            'title' => 'بلاغ ' . $this->ticket->ticket_number,
+            'body' => $this->message,
+            'data' => [
+                'ticket_id' => $this->ticket->id,
+                'event' => $this->event,
+            ],
+        ];
     }
 
     public function toArray(object $notifiable): array

@@ -27,5 +27,10 @@ class AppServiceProvider extends ServiceProvider
         }
 
         \App\Models\Company::observe(\App\Observers\CompanyObserver::class);
+
+        // Custom "fcm" notification channel for push to mobile devices.
+        \Illuminate\Support\Facades\Notification::resolved(function ($manager) {
+            $manager->extend('fcm', fn ($app) => $app->make(\App\Notifications\Channels\FcmChannel::class));
+        });
     }
 }

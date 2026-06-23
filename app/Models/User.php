@@ -72,6 +72,12 @@ class User extends Authenticatable
         return $this->hasMany(Department::class, 'head_id');
     }
 
+    /** Registered mobile devices (for FCM push). */
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
     /**
      * Restrict a user query to the acting user's company.
      * (User has no global CompanyScope to avoid auth-resolution recursion.)
