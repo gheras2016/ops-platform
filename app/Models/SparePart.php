@@ -33,10 +33,38 @@ class SparePart extends Model
     /** Quantity reserved by active (approved / partially-issued) part requests. */
     public function reservedQty(): int
     {
+        // Use a batch-loaded value when present (avoids N+1 on list endpoints).
+        if (! is_null($this->getAttribute('reserved_qty'))) {
+            return (int) $this->getAttribute('reserved_qty');
+        }
+
         return (int) PartRequestItem::where('spare_part_id', $this->id)
             ->whereHas('partRequest', fn ($q) => $q->whereIn('status', [PartRequest::STATUS_APPROVED, PartRequest::STATUS_PARTIAL]))
             ->selectRaw('COALESCE(SUM(qty_approved - qty_issued), 0) as r')
             ->value('r');
+    }
+
+    /** Reserved quantity for many parts in ONE query: [spare_part_id => reserved]. */
+    public static function reservedMapFor(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        return PartRequestItem::whereIn('spare_part_id', $ids)
+            ->whereHas('partRequest', fn ($q) => $q->whereIn('status', [PartRequest::STATUS_APPROVED, PartRequest::STATUS_PARTIAL]))
+            ->groupBy('spare_part_id')
+            ->selectRaw('spare_part_id, COALESCE(SUM(qty_approved - qty_issued), 0) as r')
+            ->pluck('r', 'spare_part_id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+    }
+
+    /** Attach batch-loaded reserved quantities onto a collection of parts (no N+1). */
+    public static function attachReserved($parts): void
+    {
+        $map = self::reservedMapFor($parts->pluck('id')->all());
+        $parts->each(fn ($p) => $p->setAttribute('reserved_qty', $map[$p->id] ?? 0));
     }
 
     /** Free-to-promise stock = on-hand − reserved. */

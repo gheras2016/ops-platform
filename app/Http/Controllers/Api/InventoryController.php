@@ -37,6 +37,8 @@ class InventoryController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        SparePart::attachReserved($parts->getCollection());
+
         return InventoryPartResource::collection($parts);
     }
 
@@ -57,6 +59,8 @@ class InventoryController extends Controller
             ->whereColumn('quantity', '<=', 'min_stock')
             ->orderBy('quantity')
             ->paginate(20);
+
+        SparePart::attachReserved($parts->getCollection());
 
         return InventoryPartResource::collection($parts);
     }
